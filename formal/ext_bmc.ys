@@ -1,0 +1,13 @@
+# Bounded check against the independent faxil_slave checker, 40 cycles.
+# Needs: scripts/fetch_deps.sh
+read_verilog -formal -sv -DSYNTHESIS rtl/axi4l_regs_core.sv
+read_verilog -formal -DFORMAL third_party/wb2axip/bench/formal/faxil_slave.v
+read_verilog -formal -sv formal/axi4l_ext_check.sv
+prep -top ext_check
+flatten
+memory_map
+opt -fast
+chformal -cover -remove
+async2sync
+dffunmap
+sat -seq 40 -prove-asserts -set-init-zero -verify

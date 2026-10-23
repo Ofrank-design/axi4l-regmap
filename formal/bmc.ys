@@ -1,0 +1,10 @@
+# Bounded check of our own properties, 30 cycles from reset.
+# Run from the repo root:  yosys -s formal/bmc.ys
+read_verilog -formal -sv -DFORMAL -DSYNTHESIS rtl/axi4l_regs_core.sv formal/axi4l_formal.sv
+prep -top formal_axi4l
+flatten
+memory_map
+opt -fast
+async2sync
+dffunmap
+sat -seq 30 -prove-asserts -set-init-zero -verify
