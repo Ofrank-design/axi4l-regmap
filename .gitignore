@@ -1,0 +1,8 @@
+build/
+obj_dir/
+third_party/
+*.vcd
+*.fst
+*.log
+*.json
+.DS_Store
