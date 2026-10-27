@@ -198,6 +198,38 @@ module axi4l_regs_core #(
         if (w_got)    assert(f_w_seen);
         if (bvalid_q) assert(f_aw_seen && f_w_seen);  // no B without both AW and W
         if (rvalid_q) assert(f_ar_seen);              // no R without an AR
+        if (rresp_q[1]) assert(rdata_q == '0);        // a failed read never leaks register data
+    end
+
+    // Write-correctness check. These remember what the commit step saw last
+    // cycle, so the registers can be compared against the write that happened.
+    reg [DATA_W-1:0] f_regs_q [NREG];
+    reg [DATA_W-1:0] f_wdata_q;
+    reg [STRB_W-1:0] f_strb_q;
+    reg [1:0]        f_idx_q;
+    reg              f_commit_q = 1'b0, f_ok_q = 1'b0, f_rst_q = 1'b1;
+
+    always @(posedge aclk) begin
+        for (int i = 0; i < NREG; i++) f_regs_q[i] <= regs[i];
+        f_rst_q    <= !aresetn;
+        f_commit_q <= aresetn && aw_got && w_got && !bvalid_q;
+        f_ok_q     <= addr_ok(aw_addr_q);
+        f_idx_q    <= aw_addr_q[3:2];
+        f_wdata_q  <= w_data_q;
+        f_strb_q   <= w_strb_q;
+    end
+
+    always @* begin
+        if (!f_rst_q) begin
+            for (int i = 0; i < NREG; i++) begin
+                for (int b = 0; b < STRB_W; b++) begin
+                    if (f_commit_q && f_ok_q && f_idx_q == i && f_strb_q[b])
+                        assert(regs[i][8*b +: 8] == f_wdata_q[8*b +: 8]);   // enabled lane written
+                    else
+                        assert(regs[i][8*b +: 8] == f_regs_q[i][8*b +: 8]); // everything else untouched
+                end
+            end
+        end
     end
 `endif
 endmodule
