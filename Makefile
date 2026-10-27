@@ -9,7 +9,7 @@ SEED     ?= 1
 VFLAGS   := --binary --timing --assert -Wno-fatal -Wno-WIDTH -Wno-UNUSED \
             -Wno-DECLFILENAME -Wno-INITIALDLY -Wno-TIMESCALEMOD
 
-.PHONY: help all deps lint sim sim-xbar synth formal formal-ext pnr clean
+.PHONY: help all deps lint sim sim-xbar synth formal formal-ext check-sw pnr reports clean
 
 help:
 	@echo "make lint         static lint of the synthesizable RTL"
@@ -18,10 +18,12 @@ help:
 	@echo "make synth        Yosys synthesis of the core, prints cell counts"
 	@echo "make formal       bounded check + unbounded induction proof of our properties"
 	@echo "make formal-ext   bounded check against the independent faxil_slave checker (needs make deps)"
+	@echo "make check-sw     compile-check the C header against the documented offsets"
+	@echo "make reports      regenerate docs/reports from a fresh run"
 	@echo "make pnr          iCE40 HX8K place-and-route, reports Fmax and utilization"
-	@echo "make all          lint, sim, sim-xbar, synth, formal, formal-ext"
+	@echo "make all          lint, sim, sim-xbar, synth, formal, formal-ext, check-sw"
 
-all: lint sim sim-xbar synth formal formal-ext
+all: lint sim sim-xbar synth formal formal-ext check-sw
 
 deps:
 	sh scripts/fetch_deps.sh
@@ -56,6 +58,14 @@ formal:
 
 formal-ext:
 	yosys -s formal/ext_bmc.ys | grep -E "SUCCESS|FAIL|ERROR"
+
+check-sw:
+	@mkdir -p $(BUILD)
+	cc -Wall -Werror -o $(BUILD)/test_header sw/test_header.c
+	$(BUILD)/test_header
+
+reports:
+	sh scripts/gen_reports.sh $(BUILD)
 
 pnr:
 	mkdir -p $(BUILD)
