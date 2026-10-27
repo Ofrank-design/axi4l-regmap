@@ -16,7 +16,7 @@ rtl/           axi4l_if.sv (interface), axi4l_regs_core.sv (logic), axi4l_regs.s
 tb/            unit testbench and crossbar integration test
 formal/        formal harnesses and Yosys scripts
 sw/            C header with the register offsets
-docs/          register map, design notes, verification summary
+docs/          register map, design notes, spec compliance, generated reports
 constraints/   starting-point SDC
 scripts/       dependency fetch
 ```
@@ -27,7 +27,7 @@ You need Verilator 5.x and Yosys. `nextpnr-ice40` is optional (timing example).
 
 ```sh
 make deps         # fetch the third-party AXI pieces (not vendored)
-make all          # lint, unit sim, crossbar sim, synthesis, formal
+make all          # lint, unit sim, crossbar sim, synthesis, formal, C header check
 make pnr          # optional: iCE40 place-and-route example
 make sim SEED=7   # rerun the random tests with another seed
 ```
@@ -60,8 +60,9 @@ address bits, so give it addresses relative to its base.
 - Offsets `0x00 0x04 0x08 0x0C` are valid; anything else gets `SLVERR`.
 - A read and write to one register in the same cycle: the read sees the old value.
 
-Full details: [docs/register_map.md](docs/register_map.md) and
-[docs/design_notes.md](docs/design_notes.md).
+Full details: [docs/register_map.md](docs/register_map.md),
+[docs/design_notes.md](docs/design_notes.md), and the checklist status in
+[docs/spec_compliance.md](docs/spec_compliance.md).
 
 ## Status
 

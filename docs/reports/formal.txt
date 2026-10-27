@@ -1,0 +1,6 @@
+== own properties, bounded (30 cycles) ==
+SAT proof finished - no model found: SUCCESS!
+== own properties, k-induction (unbounded) ==
+Induction step proven: SUCCESS!
+== independent faxil_slave checker, bounded (40 cycles) ==
+SAT proof finished - no model found: SUCCESS!

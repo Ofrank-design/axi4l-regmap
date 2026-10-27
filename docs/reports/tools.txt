@@ -1,0 +1,2 @@
+tools: Verilator 5.020 2024-01-01 rev (Debian 5.020-1) | Yosys 0.33 (git sha1 2584903a060)
+date: 2026-10-27

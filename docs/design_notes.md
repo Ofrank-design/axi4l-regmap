@@ -62,13 +62,13 @@ core alone.
 
 | Check | Result |
 |-------|--------|
-| Unit bench (directed + 500 random transactions, seeds 1/7/42/99) | passes |
-| Reset hitting an incomplete write, a pending B, a pending R, a request made during reset | passes |
-| Read/write concurrency, same-register same-cycle | passes |
+| Unit bench (corner-case patterns and every strobe pattern on all four registers, 500 random transactions per seed, seeds 1/7/42/99) | passes |
+| Reset hitting an AW-only write, a W-only write, a pending B, a pending R, a request made during reset | passes |
+| Read/write concurrency, same-register same-cycle; second request offered while a response is stalled | passes |
 | Passive monitor: no B without AW+W, no R without AR | clean |
 | Crossbar integration (two blocks, routing, strobes, SLVERR) | passes |
 | Formal, own properties, 30-cycle bounded check | no counterexample |
-| Formal, own properties, k-induction (unbounded) | proven (k = 1, with the invariants in the core) |
+| Formal, own properties, k-induction (unbounded): response stability, reset behaviour, no B/R without request, enabled byte lanes written and all others untouched, bad writes change nothing, failed reads return zero | proven (k = 1, with the invariants in the core) |
 | Formal, independent `faxil_slave` checker, 40-cycle bounded check | no counterexample |
 | Synthesis (Yosys, generic gates) | 450 cells, 210 flip-flops, no latches |
 | Place-and-route, iCE40 HX8K (example device) | 367 / 7680 LCs, Fmax ~117 MHz at a 50 MHz target |
@@ -76,6 +76,9 @@ core alone.
 The harnesses were also run against deliberately broken copies of the RTL
 (BVALID dropping without BREADY, an illegal response code, READY stuck high);
 each is caught, so the passes are not vacuous.
+
+Raw tool output for each row is in [`reports/`](reports/); the item-by-item
+status against the spec's checklist is in [spec_compliance.md](spec_compliance.md).
 
 ## What has not been verified
 

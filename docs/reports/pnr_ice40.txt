@@ -1,0 +1,19 @@
+Info: 	         ICESTORM_LC:   367/ 7680     4%
+Info: 	        ICESTORM_RAM:     0/   32     0%
+Info: 	               SB_IO:   100/  256    39%
+Info: Max frequency for clock 'aclk$SB_IO_IN_$glb_clk': 117.83 MHz (PASS at 50.00 MHz)
+-- critical path (post-route) --
+Info: Critical path report for clock 'aclk$SB_IO_IN_$glb_clk' (posedge -> posedge):
+Info: curr total
+Info:  0.5  0.5  Source bvalid_q_SB_DFFESR_Q_DFFLC.O
+Info:  0.6  1.1    Net bvalid$SB_IO_OUT budget 2.874000 ns (12,17) -> (13,17)
+Info:                Sink w_got_SB_LUT4_I2_1_LC.I0
+Info:                Defined in:
+Info:                  rtl/axi4l_regs_core.sv:81.24-81.32
+Info:  0.4  1.6  Source w_got_SB_LUT4_I2_1_LC.O
+Info:  0.6  2.2    Net w_got_SB_LUT4_I2_1_O[0] budget 2.873000 ns (13,17) -> (13,16)
+Info:                Sink w_strb_q_SB_LUT4_I3_3_LC.I0
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ice40/cells_map.v:6.21-6.22
+Info:  0.4  2.6  Source w_strb_q_SB_LUT4_I3_3_LC.O
+Info:  0.6  3.2    Net w_strb_q_SB_LUT4_I3_O[0] budget 2.873000 ns (13,16) -> (13,15)

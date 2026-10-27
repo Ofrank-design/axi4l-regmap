@@ -1,0 +1,57 @@
+2.26. Printing statistics.
+
+=== axi4l_regs_core ===
+
+   Number of wires:                270
+   Number of wire bits:            549
+   Number of public wires:          33
+   Number of public wire bits:     312
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                450
+     $_ANDNOT_                      56
+     $_AND_                         38
+     $_DFFE_PP_                     32
+     $_MUX_                        101
+     $_NAND_                         2
+     $_NOR_                          8
+     $_NOT_                          4
+     $_ORNOT_                        6
+     $_OR_                          25
+     $_SDFFCE_PN0P_                 96
+     $_SDFFE_PN0P_                  80
+     $_SDFFE_PP0P_                   2
+
+2.27. Executing CHECK pass (checking for obvious problems).
+Checking module axi4l_regs_core...
+Found and reported 0 problems.
+
+3. Printing statistics.
+
+=== axi4l_regs_core ===
+
+   Number of wires:                270
+   Number of wire bits:            549
+   Number of public wires:          33
+   Number of public wire bits:     312
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                450
+     $_ANDNOT_                      56
+     $_AND_                         38
+     $_DFFE_PP_                     32
+     $_MUX_                        101
+     $_NAND_                         2
+     $_NOR_                          8
+     $_NOT_                          4
+     $_ORNOT_                        6
+     $_OR_                          25
+     $_SDFFCE_PN0P_                 96
+     $_SDFFE_PN0P_                  80
+     $_SDFFE_PP0P_                   2
+
+End of script. Logfile hash: 70a2ed8995, CPU: user 0.30s system 0.00s, MEM: 15.24 MB peak
+Yosys 0.33 (git sha1 2584903a060)
+Time spent: 21% 19x opt_expr (0 sec), 18% 1x abc (0 sec), ...
