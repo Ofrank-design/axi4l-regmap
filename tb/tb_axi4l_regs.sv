@@ -134,26 +134,41 @@ module tb_axi4l_regs;
         check_all_regs("reset value");
     endtask
 
+    // Corner-case data patterns on every register: zeros, ones, alternating
+    // bits both ways, and values with only the top / bottom bit set.
     task automatic test_readback();
-        logic [1:0] r;
+        localparam logic [31:0] PAT [6] = '{32'h0000_0000, 32'hFFFF_FFFF, 32'hAAAA_AAAA,
+                                            32'h5555_5555, 32'h8000_0000, 32'h0000_0001};
+        logic [31:0] got;
+        logic [1:0]  r;
         for (int i = 0; i < 4; i++) begin
-            axi_write(i*4, 32'hA5A5_0000 + i, 4'hF, 0, 0, 0, r);
-            check(r == 2'b00, "write OKAY");
-            model[i] = 32'hA5A5_0000 + i;
+            for (int p = 0; p < 6; p++) begin
+                axi_write(i*4, PAT[p], 4'hF, 0, 0, 0, r);
+                check(r == 2'b00, "write OKAY");
+                model[i] = PAT[p];
+                axi_read(i*4, 0, got, r);
+                check(got == PAT[p] && r == 2'b00, $sformatf("pattern %h on reg%0d", PAT[p], i));
+            end
         end
         check_all_regs("readback");
     endtask
 
-    // Every possible strobe pattern, on one register.
+    // Every strobe pattern on every register, starting from a known background
+    // so a lane that wrongly changes (or wrongly doesn't) shows up.
     task automatic test_byte_strobes();
         logic [31:0] d, got;
         logic [1:0]  r;
-        for (int s = 0; s < 16; s++) begin
-            d = $urandom;
-            axi_write(8, d, s[3:0], 0, 0, 0, r);
-            model_write(2, d, s[3:0]);
-            axi_read(8, 0, got, r);
-            check(got == model[2], $sformatf("strobe %b", s[3:0]));
+        for (int i = 0; i < 4; i++) begin
+            for (int s = 0; s < 16; s++) begin
+                axi_write(i*4, 32'hC3C3_C3C3, 4'hF, 0, 0, 0, r);
+                model[i] = 32'hC3C3_C3C3;
+                d = $urandom;
+                axi_write(i*4, d, s[3:0], 0, 0, 0, r);
+                check(r == 2'b00, "strobe write OKAY");
+                model_write(i, d, s[3:0]);
+                axi_read(i*4, 0, got, r);
+                check(got == model[i], $sformatf("reg%0d strobe %b", i, s[3:0]));
+            end
         end
     endtask
 
@@ -226,6 +241,55 @@ module tb_axi4l_regs;
         check_all_regs("same-cycle: after");
     endtask
 
+    // A new request must not be accepted while the previous response is still
+    // waiting for the master, and the waiting response must not change.
+    task automatic test_response_backpressure();
+        logic [31:0] got;
+        logic [1:0]  r, held_resp;
+
+        // Write: take AW+W of write #1, leave BREADY low, then offer write #2.
+        #1 bus.awaddr = 0; bus.awvalid = 1; bus.wdata = 32'h0000_00F1; bus.wstrb = 4'hF; bus.wvalid = 1;
+        do @(posedge aclk); while (!(bus.awready && bus.wready));
+        #1 bus.awaddr = 4; bus.wdata = 32'h0000_00F2;          // write #2 offered immediately
+        repeat (2) @(posedge aclk);
+        held_resp = bus.bresp;
+        repeat (4) begin
+            @(posedge aclk);
+            check(bus.bvalid && bus.bresp == held_resp, "B holds while stalled");
+            check(!bus.awready && !bus.wready,          "no new AW/W while B pending");
+        end
+        axi_read(4, 0, got, r);
+        check(got == model[1], "write #2 not committed while B pending");
+        model[0] = 32'h0000_00F1;
+        #1 bus.bready = 1;                                      // master finally takes B #1
+        @(posedge aclk);
+        #1 bus.bready = 0;
+        // Write #2 is now accepted and completes.
+        do @(posedge aclk); while (!(bus.awready && bus.wready) && !bus.bvalid);
+        #1 bus.awvalid = 0; bus.wvalid = 0;
+        #1 bus.bready = 1;
+        do @(posedge aclk); while (!bus.bvalid);
+        #1 bus.bready = 0;
+        model[1] = 32'h0000_00F2;
+        check_all_regs("after write backpressure");
+
+        // Read: take AR #1, leave RREADY low, offer AR #2.
+        #1 bus.araddr = 0; bus.arvalid = 1;
+        do @(posedge aclk); while (!bus.arready);
+        #1 bus.araddr = 4;
+        repeat (3) @(posedge aclk);
+        check(bus.rvalid && bus.rdata == model[0], "R holds data while stalled");
+        check(!bus.arready, "no new AR while R pending");
+        #1 bus.rready = 1;
+        @(posedge aclk);
+        #1 bus.rready = 0;
+        do @(posedge aclk); while (!bus.rvalid);                 // R #2 for the second AR
+        check(bus.rdata == model[1], "second read returns its own register");
+        #1 bus.arvalid = 0; bus.rready = 1;
+        @(posedge aclk);
+        #1 bus.rready = 0;
+    endtask
+
     // Reset hitting a transaction at each stage. Whatever was in flight must
     // vanish, and the registers must come back at zero.
     task automatic test_reset_in_flight();
@@ -240,6 +304,14 @@ module tb_axi4l_regs;
         check(!bus.bvalid, "reset mid-write: no B");
         foreach (model[i]) model[i] = 0;
         check_all_regs("reset mid-write");
+
+        // W accepted, AW never arrives.
+        #1 bus.wdata = 32'hDEAD_0001; bus.wstrb = 4'hF; bus.wvalid = 1;
+        do @(posedge aclk); while (!bus.wready);
+        #1 bus.wvalid = 0;
+        pulse_reset(2);
+        check(!bus.bvalid, "reset with W held: no B");
+        check_all_regs("reset with W held");
 
         // Write response stalled (BREADY low).
         #1 bus.awaddr = 4; bus.awvalid = 1;
@@ -297,6 +369,7 @@ module tb_axi4l_regs;
         test_random(500);
         test_concurrency();
         test_back_to_back();
+        test_response_backpressure();
         test_reset_in_flight();
 
         if (errors == 0) $display("PASS: all tests passed");
