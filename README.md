@@ -68,8 +68,7 @@ Full details: [docs/register_map.md](docs/register_map.md),
 
 Verified in simulation, with formal proofs and an independent protocol
 checker, and synthesized and placed on an iCE40 as an example. Not yet run on
-your target FPGA or against your interconnect or hardware; see "What has not
-been verified" in the design notes before relying on it.
+your target FPGA or against   hardware; see 
 
 ## License
 
